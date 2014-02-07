@@ -14,7 +14,7 @@ html
         var player = "";
 
         data.users.forEach( function( user, index ){
-          player += "<small><b>Player"+index+":</b> (" + user + " ) " + "</small><br/>";
+          player += "<small>" + (index+1) + "." + user +"</small><br/>";
         });
 
         $('#users').empty().append(player);
@@ -36,7 +36,7 @@ html
           {
           rooms += "<b>" + room +"[FULL]</b>" + "<ul>"+ str + "</ul>" ;
           }else{
-            rooms += "<a href='#' onclick=joinRoom('"+room.slice(1)+"')>" + room.slice(1) + "["+ rooms_data[room].length +"/3]" + "</a>" + "<ul>"+ str + "</ul>";
+            rooms += "<a class='btn btn-info' href='#' onclick=joinRoom('"+room.slice(1)+"')>" + room.slice(1) + " ["+ rooms_data[room].length +"/3]" + "</a>" + "<ul>"+ str + "</ul>";
           }
         }
         //- Update all room info to users
