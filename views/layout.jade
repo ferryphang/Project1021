@@ -1,0 +1,70 @@
+doctype html
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/bootstrap.min.css')
+    script(src="/socket.io/socket.io.js")
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js")
+    script.
+
+      var socket = io.connect('http://localhost');
+
+      //- Listen on all users connection
+      socket.on( 'users', function ( data ) {
+        var player = "";
+
+        data.users.forEach( function( user, index ){
+          player += "<small><b>Player"+index+":</b> (" + user + " ) " + "</small><br/>";
+        });
+
+        $('#users').empty().append(player);
+      });
+
+      //- Listen on all Rooms info
+      socket.on( 'rooms', function( data ) {
+        //- Variable Assign
+        var rooms ="",
+            rooms_data = data.rooms;
+        //- Loop all rooms
+        for( room in rooms_data ){
+          var str = "";
+          rooms_data[room].forEach(function(x){
+            str += "<li>" + x + "</li>";
+          })
+
+          if(room != '' && rooms_data[room].length === 3)
+          {
+          rooms += "<b>" + room +"[FULL]</b>" + "<ul>"+ str + "</ul>" ;
+          }else{
+            rooms += "<a href='#' onclick=joinRoom('"+room.slice(1)+"')>" + room.slice(1) + "["+ rooms_data[room].length +"/3]" + "</a>" + "<ul>"+ str + "</ul>";
+          }
+        }
+        //- Update all room info to users
+        $('#rooms').empty().append(rooms);
+      });
+
+      //- Listen on info that sent from server
+      socket.on( 'info', function( data) {
+        $('textarea#info').val( $('textarea#info').val() + data + '\n' );
+      });
+
+      function createRoom(){
+        socket.emit('create_room', {room: prompt("What is the room name?")});
+      }
+
+      function joinRoom(data){
+        socket.emit('join_room',{room: data});
+      }
+
+      function randomRoom(){
+        socket.emit('random_room');
+      }
+
+      function leaveRoom(){
+        socket.emit('leave_room');
+      }
+    //-END OF JAVASCRIPT
+
+  body
+    block content
+

@@ -1,0 +1,22 @@
+extends layout
+
+block content
+  div.container
+    h1= title
+    p 3/02/14
+    a(href="#" onclick="createRoom()") Create Room |
+    a(href="#" onclick="randomRoom()")  Random Room |
+    a(href="#" onclick="leaveRoom()")  Leave Room
+
+    div.row
+      table.table
+        tr
+          td(colspan="2")
+            textarea(rows="10" cols="100%" id="info")
+        tr
+          td
+            h4 User Online
+            div#users.well
+          td
+            h4 Room
+            div#rooms.well
