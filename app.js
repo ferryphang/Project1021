@@ -39,20 +39,27 @@ function change_room ( socket, room ) {
   socket.leave(socket.room);
   socket.join(room);
   socket.room = room;
+
 }
 
 function room_leader ( room ) {
-  io.sockets.clients(room)[0].leader = true;
-  io.sockets.clients(room)[0].emit('info', 'You have been granted as a leader of this room');
-  console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+
+  if(io.sockets.clients(room).length !== 0){
+    io.sockets.clients(room)[0].leader = true;
+    io.sockets.clients(room)[0].emit('room_info', 'You have been granted as a leader of this room');
+    io.sockets.clients(room)[0].emit('leader', true);
+  }
 }
+
 
 // User connected
 io.sockets.on('connection', function (socket) {
+  var leader = function (trigger) {
+    socket.emit('leader', trigger);
+  };
 
-
-  var info = function(message){
-    socket.emit('info', message);
+  var room_info = function(message){
+    socket.emit('room_info', message);
   };
   // Push new user to the users collection
   users.push(socket.id);
@@ -63,7 +70,7 @@ io.sockets.on('connection', function (socket) {
   // Assign user to default room lobby
   socket.room = undefined;
   // Tell the player its socket id also currently in what room
-  info("Player ID: " + socket.id + "\n" + "In Room: " + socket.room);
+  socket.emit("user_info",{id: socket.id, room: socket.room });
 
   socket.on('create_room', function ( data ) {
     if(io.sockets.manager.rooms['/' + data.room] === undefined){
@@ -72,14 +79,15 @@ io.sockets.on('connection', function (socket) {
       // FUNCTION TO HANDLE WHO IS THE LEADER OF THE ROOM
       room_leader(data.room);
       if(socket.leader){
-        info('You are the leader for this [' + socket.room + '] room');
+        room_info('You are the leader for this [' + socket.room + '] room');
+        leader(true);
       }
 
-      info(socket.id + " created [" +socket.room + "] room");
+      room_info(socket.id + " created [" +socket.room + "] room");
       io.sockets.emit('rooms', { rooms: io.sockets.manager.rooms });
       socket.emit('in_the_room', true);
     }else{
-      socket.emit('info', 'Room with that name already exists');
+      socket.emit('room_info', 'Room with that name already exists');
 
     }
   });
@@ -92,7 +100,7 @@ io.sockets.on('connection', function (socket) {
         if(available !== ""){
           if(io.sockets.clients(available.slice(1)).length != 3){
             change_room(socket, available.slice(1));
-            io.sockets.in(socket.room).emit('info', socket.id + " joined [" + socket.room + "] room");
+            io.sockets.in(socket.room).emit('room_info', socket.id + " joined [" + socket.room + "] room");
             io.sockets.emit('rooms', { rooms: io.sockets.manager.rooms });
             got_it = true;
             break;
@@ -111,17 +119,20 @@ io.sockets.on('connection', function (socket) {
 
   socket.on('join_room', function (data) {
     change_room(socket, data.room);
-    io.sockets.in(socket.room).emit('info',socket.id + " join [" + socket.room + "] room");
+    io.sockets.in(socket.room).emit('room_info',socket.id + " join [" + socket.room + "] room");
     io.sockets.emit('rooms', { rooms: io.sockets.manager.rooms });
   });
 
   socket.on('leave_room', function () {
     var user_room = socket.room;
-    io.sockets.in(socket.room).emit('info', socket.id + " left [" + socket.room + "] room");
+    io.sockets.in(socket.room).emit('room_info', socket.id + " left [" + socket.room + "] room");
 
     socket.leave(socket.room);
-    delete socket.leader;
 
+    // TELL THE CLIENT TO HIDE THEIR START BUTTON
+    leader(false);
+    delete socket.leader;
+    delete socket.weapon;
     // ON PROGRESS
     room_leader(user_room);
 
@@ -132,12 +143,52 @@ io.sockets.on('connection', function (socket) {
     socket.room = undefined;
   });
 
+  socket.on('room_chat', function (msg) {
+    io.sockets.in(socket.room).emit('room_info',"["+socket.id+"]: " + msg);
+  });
+
+  socket.on('weapon', function (weapon) {
+    socket.weapon = weapon;
+    io.sockets.in(socket.room).emit('room_info',"["+socket.id+"]: LOCKED -> Weapon " + socket.weapon);
+    console.log(io.sockets.clients(socket.room));
+    if(io.sockets.clients(socket.room).length == 3){
+      if(io.sockets.clients(socket.room).every(function(user){
+        return user.weapon;
+      })){
+      io.sockets.in(socket.room).emit('room_info',"Every players are locked theirs weapon - Room master can start the game");
+      }
+    }
+  });
+
+  socket.on('start_game', function () {
+    console.log(io.sockets.clients(socket.room));
+    if(io.sockets.clients(socket.room).length == 3){
+      if(io.sockets.clients(socket.room).every(function(user){
+        return user.weapon;
+      })){
+        io.sockets.in(socket.room).emit('room_info',"Game is starting.......");
+      }else{
+        io.sockets.in(socket.room).emit('room_info',"Sorry There are some player not locked their weapon");
+      }
+    }else{
+      io.sockets.in(socket.room).emit('room_info',"The room is not full yet");
+    }
+  });
+
   socket.on('disconnect', function () {
+    var user_room = socket.room;
     users.splice(users.indexOf(socket.id),1);
     socket.leave(socket.room);
+
+    leader(false);
+    delete socket.leader;
+    delete socket.weapon;
+
+    room_leader(user_room);
+
     io.sockets.emit('users', { users: users });
     io.sockets.emit('rooms', { rooms: io.sockets.manager.rooms });
-    io.sockets.emit('info', socket.id + 'left the room');
+    io.sockets.emit('room_info', socket.id + 'left the room');
   });
 
 

@@ -9,6 +9,7 @@ html
 
       var socket = io.connect('http://localhost');
 
+
       //- Listen on all users connection
       socket.on( 'users', function ( data ) {
         var player = "";
@@ -43,10 +44,34 @@ html
         $('#rooms').empty().append(rooms);
       });
 
-      //- Listen on info that sent from server
-      socket.on( 'info', function( data) {
+      //- Listen on user info {SOCKET ID OR ROOM}
+      socket.on('user_info', function(data){
+        $('#user_info').empty().append("ID : " + data.id + "<br/>" + "Room : " + data.room);
+      });
+
+      //- Listen on room info that sent from server
+      socket.on( 'room_info', function( data) {
         $('textarea#info').val( $('textarea#info').val() + data + '\n' );
       });
+
+      socket.on( 'leader', function(trigger){
+        if(trigger){
+          $('#startGame').show();
+        }else{
+          $('#startGame').hide();
+        }
+      });
+
+      function lockEvent(trigger){
+        if(trigger){
+          $('#lockWeapon').attr("disabled", "disabled");
+          $('#lockWeapon').html('Your Weapon Locked');
+          $('#weapon').attr("disabled", "disabled");
+        }else{
+          $('#lockWeapon').removeAttr("disabled", "disabled");
+          $('#weapon').removeAttr("disabled", "disabled");
+        }
+      }
 
       function createRoom(){
         socket.emit('create_room', {room: prompt("What is the room name?")});
@@ -61,10 +86,43 @@ html
       }
 
       function leaveRoom(){
+        $('textarea#info').val('');
         socket.emit('leave_room');
+        lockEvent(false);
+
+      }
+      function lockWeapon(){
+        socket.emit('weapon',$('#weapon').val());
+        lockEvent(true);
+      }
+      function startGame(){
+        socket.emit('start_game');
+      }
+      function sendMessage(){
+        socket.emit('room_chat',$('#message').val());
+        $('#message').val('');
       }
     //-END OF JAVASCRIPT
 
   body
     block content
+
+    script.
+      $("#startGame").hide();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

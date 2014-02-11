@@ -1,23 +1,43 @@
 extends layout
 
 block content
-  div.container
+  div.container-fluid
 
     h1= title
 
     div.row
-      table.table.table-condensed
-        tr
-          td
-            textarea(rows="10" cols="120" id="info")
-            div.btn-group
-              a.btn.btn-primary(href="#" onclick="createRoom()") Create Room
-              a.btn.btn-success(href="#" onclick="randomRoom()")  Random Room
-              a.btn.btn-warning(href="#" onclick="leaveRoom()")  Leave Room
-          td
-            h4 User Online
-            div#users.well
-        tr
-          td
-            h4 Room
-            div#rooms.well.well-small
+      div.col-md-4
+        h6 Online users
+        div#users.well
+      div.col-md-4
+        h6 Rooms
+        div#rooms.well
+      div.col-md-4
+        h6 Info
+        div#user_info.well
+
+    div.row
+      div.col-md-12
+        div#init_room.well
+          div.btn-group
+            a.btn.btn-primary(href="#" onclick="createRoom()") Create Room
+            a.btn.btn-success(href="#" onclick="randomRoom()")  Random Room
+
+    div.row.well
+      div.col-md-5
+        div#chat_room
+          h5 Game Room
+          textarea(rows="10" cols="60" id="info")
+          input(type="text" name="message" id="message" placeholder="Type message here... ")
+          a.btn.btn-success(href='#' onclick="sendMessage()") Send
+          br
+          a.btn.btn-primary(href='#' id="startGame" onclick="startGame()") Start
+
+          a.btn.btn-danger(href="#" onclick="leaveRoom()")  Leave Room
+
+      div.col-md-5
+        input(type="text" name="weapon" id="weapon" value="CANNON")
+        a.btn.btn-primary(href='#' id="lockWeapon" onclick="lockWeapon()") Lock
+
+
+
